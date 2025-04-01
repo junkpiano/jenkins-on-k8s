@@ -59,6 +59,83 @@ colima stop
 colima delete # tear down the current VM
 ```
 
+## Jenkins Configuration
+
+Let's walk through Pod Template settings (in Jenkins UI)
+
+---
+**Where:**
+
+Manage Jenkins → Configure System → Kubernetes Cloud → Pod Templates
+
+---
+
+### Basic Pod Template Settings
+
+| Field           | Example / Description                                             |
+|-----------------|-------------------------------------------------------------------|
+| Name            | jnlp-agent                                                        |
+| Labels          | k8s-agent                                                         |
+| Namespace       | jenkins                                                           |
+| Service Account | jenkins (with RBAC)                                               |
+| Node Selector   | (optional)                                                        |
+| Usage           | Only build jobs with label expressions matching this pod template |
+
+### Container Settings (inside Pod Template)
+
+Click Add Container, and fill:
+
+| Field          | Example                                      |
+|----------------|----------------------------------------------|
+| Name           | jnlp (required)                              |
+| Docker Image   | jenkins/inbound-agent:3107.v665000b_51092-15 |
+| Working Dir    | /home/jenkins/agent                          |
+| Command to run | (leave empty)                                |
+| Args           | $(JENKINS_SECRET) $(JENKINS_NAME)            |
+
+### Optional: YAML Override (inline pod definition)
+
+You can also paste a full YAML to override the pod spec:
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins/label: k8s-agent
+spec:
+  containers:
+    - name: jnlp
+      image: jenkins/inbound-agent:3107.v665000b_51092-15
+      args:
+        - $(JENKINS_SECRET)
+        - $(JENKINS_NAME)
+      tty: true
+```
+
+💡 This is useful if you want to define multiple containers (e.g., jnlp, maven, node) in one pod.
+
+### Full Working Setup: Jenkinsfile + Pod Template (UI)
+
+Once this Pod Template exists in Jenkins:
+
+```
+pipeline {
+    agent {
+        label 'k8s-agent' // Match the Pod Template label
+    }
+    stages {
+        stage('Run inside K8s agent') {
+            steps {
+                sh 'echo Hello from Kubernetes!'
+            }
+        }
+    }
+}
+```
+
+No need to inline YAML if you already defined the Pod Template in the UI.
+
 ## Lesson Learned
 
 I faced many pitfalls and gave a lot of attempts to get it right.
