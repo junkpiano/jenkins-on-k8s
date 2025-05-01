@@ -14,23 +14,26 @@ Setup Jenkins on kubernetes on MacOS.
 - Colima `brew install colima`
 - kubectl `brew install kubectl`
 - Docker `brew install docker`
-- Minikube([install](https://minikube.sigs.k8s.io/docs/start/?arch=%2Fmacos%2Farm64%2Fstable%2Fbinary+download))
+- Helm `brew install helm`
 
 ## Start Kubernetes
 
 ```
-colima start # start VM
-minikube start # start kubernetes inside the VM
+colima start --kubernetes --k3s-arg "" # start VM without k3s args
 ```
 
-## Enable minikube addons
+## Install with helm (Recommended)
 
 ```
-minikube addons enable metrics-server # for dashboard
-minikube addons enable ingress # for routing
+kubectl create namespace jenkins
+helm repo add jenkins https://charts.jenkins.io
+helm repo update
+helm upgrade --install jenkins jenkins/jenkins --namespace jenkins --values jenkins-values.yaml
 ```
 
-## Install 
+Open `http://jenkins.localhost`
+
+## Install without helm
 
 ```
 kubectl create namespace jenkins
@@ -43,18 +46,9 @@ kubectl apply -f jenkins-ingress.yaml
 
 Open `http://jenkins.localhost`.
 
-## Minikube Dashboard
-
-```
-minikube dashboard # monitor pods, services, and so forth
-```
-
 ## Stop and delete kubernetes
 
 ```
-minikube stop
-minikube delete # tear down the current k8s
-
 colima stop
 colima delete # tear down the current VM
 ```

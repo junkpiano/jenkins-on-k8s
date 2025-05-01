@@ -1,0 +1,66 @@
+# jenkins-values.yaml
+#
+# Minimal but production-ready settings for a single-node Jenkins
+# running inside k3s on a Colima VM.  Adjust resources, storage,
+# and ingress details to suit your laptop.
+
+controller:
+  # ──────────────────────────
+  # Authentication
+  admin:
+    user: admin
+    password: admin123        # ← change before pushing anywhere public!
+
+  # ──────────────────────────
+  # Service exposure
+  #
+  # • ClusterIP  → use `kubectl port-forward` or an Ingress
+  # • NodePort   → reachable on http://localhost:<nodePort>
+  # • LoadBalancer → for cloud providers; ignored by k3s
+  serviceType: ClusterIP         # Change to NodePort if preferred
+  # nodePort: 32000               # Uncomment if serviceType == NodePort
+
+  # ──────────────────────────
+  # Pod resources (k3s defaults are small)
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+  # ──────────────────────────
+  # Install plugins on first boot (examples)
+  #installPlugins:
+  #  - kubernetes:4203.v1dd01ef2fa_85
+  #  - workflow-aggregator:596.v8c21c963d92d
+  #  - blueocean:1.27.5
+
+  # ──────────────────────────
+  # Optionally enable ingress (Traefik is built into k3s)
+  ingress:
+   enabled: true
+   hostName: jenkins.localhost
+  #  tls:
+  #    - hosts:
+  #        - jenkins.localhost
+  #      secretName: jenkins-tls
+
+# ──────────────────────────
+# Persistent volume claim — uses k3s “local-path” storage class
+persistence:
+  enabled: true
+  size: 8Gi            # Stored in the Colima VM’s disk image
+  #storageClass: local-path   # k3s default; override for custom mounts
+
+# ──────────────────────────
+# Agent settings (optional; pod templates can be added later)
+agent:
+  enabled: true       # flip to true if you want a built-in JNLP agent pod
+  podTemplates:
+   jnlp: |
+    - name: jnlp
+      namespace: jenkins
+      label: k8s-agent
+          
